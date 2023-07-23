@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   Param,
+  ParseIntPipe,
   Patch,
   Post,
 } from '@nestjs/common';
@@ -14,33 +15,33 @@ import { UpdateUserDto } from './dto/update-user.dto';
 
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(private readonly usersService: UsersService) { }
 
   @Get()
-  public getUsers(): User[] {
+  public async getUsers(): Promise<Omit<User, 'password'>[]> {
     return this.usersService.getUsers();
   }
 
   @Get(':id')
-  public getUserById(@Param('id') id: number): User {
+  public async getUserById(@Param('id', ParseIntPipe) id: number): Promise<Omit<User, 'password'>> {
     return this.usersService.getUserById(id);
   }
 
   @Post()
-  public createUser(@Body() createUserDto: CreateUserDto): User {
-    return this.usersService.createUser(createUserDto);
+  public async createUser(@Body() createUserDto: CreateUserDto): Promise<Omit<User, 'password'>> {
+    return this.usersService.createUser(createUserDto)
   }
 
   @Patch(':id')
-  public updateUser(
-    @Param('id') id: number,
+  public async updateUser(
+    @Param('id', ParseIntPipe) id: number,
     @Body() updateUserDto: UpdateUserDto,
-  ): User {
-    return this.usersService.updateUser(id, updateUserDto);
+  ): Promise<Omit<User, 'password'>> {
+    return this.usersService.updateUser(id, updateUserDto)
   }
 
   @Delete(':id')
-  public deleteUser(@Param('id') id: number): void {
+  public deleteUser(@Param('id', ParseIntPipe) id: number): Promise<void> {
     return this.usersService.deleteUser(id);
   }
 }

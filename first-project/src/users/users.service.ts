@@ -6,69 +6,97 @@ import {
 import { User } from './user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class UsersService {
-  private _users: User[] = [];
+  constructor(private readonly prismaService: PrismaService) {}
 
-  public getUsers(): User[] {
-    return this._users;
+  public async getUsers(): Promise<Omit<User, 'password'>[]> {
+    return this.prismaService.user.findMany({
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        birth_at: true,
+        created_at: true,
+        updated_at: true
+      }
+    });
   }
 
-  public getUserById(id: number): any {
-    const user = this._users.filter((user) => user.id === Number(id))[0];
-
-    if (!user) {
-      throw new NotFoundException('Usuário não encontrado.');
-    }
-
-    return user;
+  public async getUserById(id: number): Promise<Omit<User, 'password'>> {
+    const user = await this.existsUser(id)
+      
+    return user
   }
 
-  public createUser({ name, age }: CreateUserDto) {
-    if (!name || !age) {
-      throw new BadRequestException(
-        'Erro na solicitação de criação de novo usuário.',
-      );
-    }
-
-    let generateId: number;
-
-    if (this._users.length === 0) {
-      generateId = 1;
+  public async createUser({ email, name, password, birth_at }: CreateUserDto): Promise<Omit<User, 'password'>> {
+    if (birth_at) {
+      birth_at = new Date(birth_at)
     } else {
-      generateId = this._users[this._users.length - 1].id;
-      generateId++;
+      birth_at = null
     }
 
-    const user = { id: generateId, name, age };
-    this._users.push(user);
+    const user = await this.prismaService.user.create({
+      data: {
+        email,
+        name,
+        password,
+        birth_at
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        birth_at: true,
+        created_at: true,
+        updated_at: true
+      }
+    })
 
     return user;
   }
 
-  public updateUser(id: number, { name, age }: UpdateUserDto) {
-    const filterUserById = (user) => user.id === Number(id);
-    const hasUserIndex = this._users.findIndex(filterUserById);
-    const hasUser = this._users.filter(filterUserById)[0];
+  public async updateUser(id: number, { name, email, password, birth_at }: UpdateUserDto): Promise<Omit<User, 'password'>> {
+    await this.existsUser(id)
 
-    if (name) hasUser.name = name;
-    if (age) hasUser.age = age;
-
-    this._users.splice(hasUserIndex, 1, hasUser);
-
-    return hasUser;
-  }
-
-  public deleteUser(id: number): void {
-    const hasUserIndex = this._users.findIndex(
-      (user) => user.id === Number(id),
-    );
-
-    if (hasUserIndex < 0) {
-      throw new NotFoundException('Usuário não encontrado.');
+    if (birth_at) {
+      birth_at = new Date(birth_at)
+    } else {
+      birth_at = null
     }
 
-    this._users.splice(hasUserIndex, 1);
+    return this.prismaService.user.update({
+      data: {
+        name,
+        birth_at,
+        email,
+        password
+      },
+      where: { id },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        birth_at: true,
+        created_at: true,
+        updated_at: true
+      }
+    })
+  }
+
+  public async deleteUser(id: number): Promise<void> {
+    await this.getUserById(id)
+    await this.prismaService.user.delete({ where: { id }})
+  }
+
+  public async existsUser(id: number): Promise<Omit<User, 'password'>> {
+    const user = await this.prismaService.user.findUnique({ where: { id }});
+    
+    if (!user)
+      throw new NotFoundException('Usuário não encontrado.')
+    
+    return user
   }
 }
