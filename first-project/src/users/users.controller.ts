@@ -17,7 +17,7 @@ import { CustomParam } from 'src/decorators/param-id/custom-param.decorator';
 @UseInterceptors(LogInterceptor)
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) { }
+  constructor(private readonly usersService: UsersService) {}
 
   @Get()
   public async getUsers(): Promise<Omit<User, 'password'>[]> {
@@ -25,13 +25,17 @@ export class UsersController {
   }
 
   @Get(':id')
-  public async getUserById(@CustomParam('id') id: number): Promise<Omit<User, 'password'>> {
+  public async getUserById(
+    @CustomParam('id') id: number,
+  ): Promise<Omit<User, 'password'>> {
     return this.usersService.getUserById(id);
   }
 
   @Post()
-  public async createUser(@Body() createUserDto: CreateUserDto): Promise<Omit<User, 'password'>> {
-    return this.usersService.createUser(createUserDto)
+  public async createUser(
+    @Body() createUserDto: CreateUserDto,
+  ): Promise<Omit<User, 'password'>> {
+    return this.usersService.createUser(createUserDto);
   }
 
   @Patch(':id')
@@ -39,7 +43,7 @@ export class UsersController {
     @CustomParam('id') id: number,
     @Body() updateUserDto: UpdateUserDto,
   ): Promise<Omit<User, 'password'>> {
-    return this.usersService.updateUser(id, updateUserDto)
+    return this.usersService.updateUser(id, updateUserDto);
   }
 
   @Delete(':id')
